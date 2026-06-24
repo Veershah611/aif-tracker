@@ -1,0 +1,47 @@
+name: Daily AIF Scraper
+
+on:
+  schedule:
+    # Runs every day at 18:30 UTC (which is midnight IST, right after market close)
+    - cron: '30 18 * * *'
+  workflow_dispatch: # Allows manual trigger from the GitHub UI
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Install Playwright Browsers
+        run: |
+          playwright install chromium
+          
+      - name: Initialize Database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python main.py init-db
+          
+      - name: Run Baseline Scraper (Trendlyne)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python main.py scrape-baseline
+          
+      - name: Run Delta Engine (NSE & BSE Deals)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python main.py scrape-deals
