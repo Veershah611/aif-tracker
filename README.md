@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AIF & Mutual Fund Portfolio Scraper
 
 A complete Python scraping and portfolio reconstruction system for tracking 8 institutional funds (4 AIFs + 4 Mutual Funds) across Indian equity markets. 
@@ -148,3 +149,7 @@ For production use, the Delta Engine may require:
 1. Upgrading the NSE/BSE fetchers to use Playwright to intercept the API XHR calls from within a real browser context.
 2. Utilizing rotating residential proxies (configurable in `.env` via `PROXY_POOL`).
 3. As a fallback, scraping Trendlyne's bulk/block deal pages instead of querying the exchanges directly.
+=======
+# aif-tracker
+It tracks and scrapes data for aifs
+>>>>>>> 29d56429a31bcef9eab15a047ae59fe9ff023d35
