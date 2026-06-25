@@ -38,6 +38,10 @@ def get_bse_bulk_deals():
     """Fetches bulk deals data from BSE."""
     session = requests.Session()
     session.headers.update(HEADERS)
+    session.headers.update({
+        "Referer": "https://www.bseindia.com/",
+        "Origin": "https://www.bseindia.com/"
+    })
     
     try:
         logger.info("Fetching Bulk Deals data from BSE...")

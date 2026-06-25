@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Briefcase, BarChart3, Database, Activity, LayoutDashboard, Layers, TrendingUp, Search, ArrowUpDown } from 'lucide-react';
 import './index.css';
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+const rawApiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+let API_BASE = rawApiBase.replace(/\/+$/, '');
+if (!API_BASE.endsWith('/api')) {
+  API_BASE += '/api';
+}
 
 function App() {
   const [activeTab, setActiveTab] = useState('portfolio'); // 'portfolio' | 'trades' | 'stocks'

@@ -20,6 +20,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def health_check():
+    """Root endpoint for health checks."""
+    return {"status": "ok", "message": "AIF Scraper API is running"}
+
+
 def clean_nan(obj: Any) -> Any:
     """Helper to replace NaN/Infinity values with None for JSON serialization."""
     if isinstance(obj, float):
