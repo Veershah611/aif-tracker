@@ -13,9 +13,10 @@ the fund's estimated current portfolio.
 from typing import Optional
 import pandas as pd
 
-from config.fund_registry import FUND_BY_ID, ALL_FUNDS
-from database.operations import get_latest_baseline, get_trades_since
-from utils.logger import get_logger
+from app.core.fund_registry import FUND_BY_ID, ALL_FUNDS
+from app.db.operations import get_latest_baseline, get_trades_since
+from app.scrapers.market_data import enrich_portfolio_with_market_data
+from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -125,7 +126,15 @@ def reconstruct_portfolio(fund_id: str) -> pd.DataFrame:
         (result["status"] == "EXITED").sum(),
     )
 
-    return result[columns].reset_index(drop=True)
+    result_df = result[columns].reset_index(drop=True)
+
+    # Enrich with live market data (current price + market cap)
+    try:
+        result_df = enrich_portfolio_with_market_data(result_df)
+    except Exception as e:
+        logger.warning("Market data enrichment failed (portfolio still valid): %s", e)
+
+    return result_df
 
 
 def reconstruct_all_portfolios() -> dict:
@@ -160,7 +169,10 @@ def display_portfolio(fund_id: str):
     print(f"{'=' * 80}")
 
     # Display columns
-    display_cols = ["stock_name", "current_qty", "baseline_qty", "net_delta", "status"]
+    display_cols = [
+        "stock_name", "current_qty", "baseline_qty", "net_delta",
+        "current_price", "market_cap", "status",
+    ]
     display_cols = [c for c in display_cols if c in df.columns]
 
     pd.set_option("display.max_rows", None)

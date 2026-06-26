@@ -3,17 +3,17 @@ Database CRUD operations.
 All read/write helpers for the 4 core tables.
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import List, Optional
 import pandas as pd
 from sqlalchemy import func
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
-from database.models import (
+from app.db.models import (
     Entity, SecurityMaster, PortfolioBaseline, TradeLedger,
 )
-from database.connection import get_session
-from utils.logger import get_logger
+from app.db.connection import get_session
+from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -69,7 +69,7 @@ def bulk_upsert_securities(records: List[dict]):
                 for key, val in rec.items():
                     if val is not None and key != "isin":
                         setattr(existing, key, val)
-                existing.last_updated = datetime.utcnow()
+                existing.last_updated = datetime.now(timezone.utc)
             else:
                 session.add(SecurityMaster(**rec))
 

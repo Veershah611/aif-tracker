@@ -16,29 +16,29 @@ Commands:
 import argparse
 import sys
 
-from utils.logger import get_logger
+from app.core.logger import get_logger
 
 logger = get_logger("main")
 
 
 def cmd_init_db(args):
     """Initialize database tables and seed fund entities."""
-    from database.connection import init_db
+    from app.db.connection import init_db
     init_db()
     print("[OK] Database initialized successfully.")
 
 
 def cmd_update_securities(args):
     """Refresh the security master table from BSE."""
-    from scrapers.security_master import update_security_master
+    from app.scrapers.security_master import update_security_master
     count = update_security_master()
     print(f"[OK] Security master updated. {count} securities processed.")
 
 
 def cmd_scrape_baseline(args):
     """Scrape Trendlyne for AIF baseline portfolios."""
-    from scrapers.baseline_aggregator import scrape_all_baselines, scrape_fund_baseline
-    from config.fund_registry import FUND_BY_ID
+    from app.scrapers.baseline_aggregator import scrape_all_baselines, scrape_fund_baseline
+    from app.core.fund_registry import FUND_BY_ID
 
     if args.fund:
         fund = FUND_BY_ID.get(args.fund)
@@ -57,7 +57,7 @@ def cmd_scrape_baseline(args):
 
 def cmd_scrape_deals(args):
     """Run the daily Delta Engine (NSE + BSE bulk/block deals)."""
-    from nse_pipeline import process_and_update
+    from app.scrapers.nse_pipeline import process_and_update
     results = process_and_update()
     total = sum(results.values())
     print(f"[OK] Delta engine complete. {total} new matched deals.")
@@ -66,12 +66,10 @@ def cmd_scrape_deals(args):
 
 
 
-
-
 def cmd_portfolio(args):
     """Show reconstructed portfolio for one or all funds."""
-    from engine.portfolio_reconstructor import display_portfolio, reconstruct_all_portfolios
-    from config.fund_registry import ALL_FUNDS
+    from app.engine.portfolio_reconstructor import display_portfolio, reconstruct_all_portfolios
+    from app.core.fund_registry import ALL_FUNDS
 
     if args.all:
         portfolios = reconstruct_all_portfolios()
@@ -86,7 +84,7 @@ def cmd_portfolio(args):
 
 def cmd_list_funds(args):
     """List all target funds."""
-    from config.fund_registry import ALL_FUNDS
+    from app.core.fund_registry import ALL_FUNDS
     print(f"\n{'=' * 70}")
     print(f"  {'Fund ID':<25} {'Name':<35} {'Type'}")
     print(f"{'=' * 70}")
@@ -102,18 +100,18 @@ def cmd_run_all(args):
     print("=" * 60)
 
     # Step 1: Init DB
-    print("\n[1/5] Initializing database...")
+    print("\n[1/4] Initializing database...")
     cmd_init_db(args)
 
     # Step 2: Update security master
-    print("\n[2/5] Updating security master...")
+    print("\n[2/4] Updating security master...")
     try:
         cmd_update_securities(args)
     except Exception as e:
         print(f"  [WARN] Security master update failed: {e}")
 
     # Step 3: Scrape baselines
-    print("\n[3/5] Scraping AIF baselines from Trendlyne...")
+    print("\n[3/4] Scraping AIF baselines from Trendlyne...")
     try:
         cmd_scrape_baseline(args)
     except Exception as e:
@@ -165,8 +163,6 @@ def main():
 
     # scrape-deals
     subparsers.add_parser("scrape-deals", help="Run daily NSE/BSE delta engine")
-
-
 
     # portfolio
     port_parser = subparsers.add_parser("portfolio", help="Show reconstructed portfolio")

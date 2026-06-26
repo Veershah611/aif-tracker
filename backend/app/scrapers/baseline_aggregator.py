@@ -18,15 +18,15 @@ from typing import List, Dict, Optional
 from bs4 import BeautifulSoup
 import pandas as pd
 
-from config.settings import TRENDLYNE_SUPERSTAR_URL, TRENDLYNE_BASE_URL
-from config.fund_registry import AIF_FUNDS, ALL_FUNDS, FundConfig, FUND_BY_ID
-from database.operations import upsert_baseline, bulk_upsert_baselines
-from engine.normalizer import (
+from app.core.config import TRENDLYNE_SUPERSTAR_URL, TRENDLYNE_BASE_URL
+from app.core.fund_registry import AIF_FUNDS, ALL_FUNDS, FundConfig, FUND_BY_ID
+from app.db.operations import upsert_baseline, bulk_upsert_baselines
+from app.engine.normalizer import (
     normalize_company_name, parse_quantity,
     parse_percentage, parse_indian_value, normalize_text,
 )
-from scrapers.security_master import lookup_isin
-from utils.logger import get_logger
+from app.scrapers.security_master import lookup_isin
+from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 

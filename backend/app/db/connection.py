@@ -8,24 +8,24 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from contextlib import contextmanager
 
-from config.settings import DATABASE_URL
-from database.models import Base
-from config.fund_registry import ALL_FUNDS
-from utils.logger import get_logger
+from app.core.config import settings
+from app.db.models import Base
+from app.core.fund_registry import ALL_FUNDS
+from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 
 # Create engine with appropriate settings
-if DATABASE_URL.startswith("sqlite"):
+if settings.DATABASE_URL.startswith("sqlite"):
     engine = create_engine(
-        DATABASE_URL,
+        settings.DATABASE_URL,
         echo=False,
         connect_args={"check_same_thread": False},
     )
 else:
     # PostgreSQL or other databases
     engine = create_engine(
-        DATABASE_URL,
+        settings.DATABASE_URL,
         echo=False,
         pool_size=5,
         max_overflow=10,
@@ -61,9 +61,9 @@ def init_db():
     Create all tables and seed the Entity table with the 8 target funds.
     Safe to call multiple times — uses CREATE IF NOT EXISTS.
     """
-    from database.models import Entity
+    from app.db.models import Entity
 
-    logger.info("Initializing database at: %s", DATABASE_URL)
+    logger.info("Initializing database at: %s", settings.DATABASE_URL)
     Base.metadata.create_all(engine)
     logger.info("All tables created successfully.")
 

@@ -7,21 +7,17 @@ Per document §4.2:
   - Run weekly to keep mapping current
 """
 
-import io
-import json
 from typing import Optional
 
 import pandas as pd
 
-from config.settings import BSE_SECURITY_MASTER_URL
-from database.operations import bulk_upsert_securities, resolve_isin, get_security_count
-from utils.http_client import BSESession, create_session
-from utils.logger import get_logger
+from app.core.config import BSE_SECURITY_MASTER_URL
+from app.db.operations import bulk_upsert_securities, resolve_isin, get_security_count
+from app.core.http_client import BSESession, create_session
+from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 
-# Alternative BSE URLs for equity list
-BSE_EQUITY_CSV_URL = "https://api.bseindia.com/BseIndiaAPI/api/ListofScripData/w?Group=&Atea=&Flag=true"
 
 
 def fetch_bse_security_list() -> pd.DataFrame:
@@ -33,7 +29,7 @@ def fetch_bse_security_list() -> pd.DataFrame:
     session = BSESession()
 
     try:
-        response = session.get(BSE_EQUITY_CSV_URL)
+        response = session.get(BSE_SECURITY_MASTER_URL)
         data = response.json()
 
         if not data:

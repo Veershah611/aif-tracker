@@ -8,7 +8,7 @@ Tables per document §6.2:
   - TradeLedger     : Daily bulk/block deal records
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from sqlalchemy import (
     Column, String, Integer, Float, Date, DateTime,
     ForeignKey, UniqueConstraint, Index, Text,
@@ -32,7 +32,7 @@ class Entity(Base):
     fund_name = Column(String(200), nullable=False)
     regulatory_type = Column(String(10), nullable=False)   # "AIF" or "MF"
     category = Column(String(50), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
     baselines = relationship("PortfolioBaseline", back_populates="entity")
@@ -57,7 +57,7 @@ class SecurityMaster(Base):
     group_name = Column(String(10))         # BSE group (A, B, T, etc.)
     face_value = Column(Float)
     industry = Column(String(200))
-    last_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_updated = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     def __repr__(self):
         return f"<Security({self.isin}: {self.company_name})>"
@@ -80,7 +80,7 @@ class PortfolioBaseline(Base):
     holding_value = Column(Float)                # In INR
     report_date = Column(Date, nullable=False)   # Quarter-end or month-end date
     source = Column(String(50), nullable=False)  # "trendlyne", "amc_quant", "amc_bandhan", "amc_boi"
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Deduplication: one record per fund + stock + report period
     __table_args__ = (
@@ -116,7 +116,7 @@ class TradeLedger(Base):
     deal_type = Column(String(10))               # "BULK", "BLOCK", "SHORT"
     raw_client_name = Column(Text)               # Original name from API
     source = Column(String(50), nullable=False)  # "nse_api", "bse_api", "trendlyne"
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Deduplication: prevent duplicate deal entries
     __table_args__ = (
@@ -126,6 +126,7 @@ class TradeLedger(Base):
             name="uq_trade_dedup"
         ),
         Index("ix_trade_fund_date", "fund_id", "trade_date"),
+        Index("ix_trade_ledger_isin_date", "isin", "trade_date"),
     )
 
     # Relationships

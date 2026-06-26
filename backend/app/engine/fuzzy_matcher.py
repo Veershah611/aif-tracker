@@ -11,9 +11,9 @@ Per document §4.1:
 from typing import Optional, Tuple, List
 from rapidfuzz import fuzz, process
 
-from config.fund_registry import ALL_FUNDS, ALIAS_TO_FUND_ID, FundConfig
-from config.settings import FUZZY_MATCH_THRESHOLD
-from utils.logger import get_logger
+from app.core.fund_registry import ALL_FUNDS, ALIAS_TO_FUND_ID, FundConfig
+from app.core.config import settings
+from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -79,7 +79,7 @@ class FundMatcher:
         matched_alias, score, _ = result
         fund_id = self._alias_to_fund[matched_alias]
 
-        if score >= FUZZY_MATCH_THRESHOLD:
+        if score >= settings.FUZZY_MATCH_THRESHOLD:
             logger.info(
                 "Fuzzy match (%.1f%%): '%s' → %s (matched alias: '%s')",
                 score, client_name, fund_id, matched_alias
@@ -89,7 +89,7 @@ class FundMatcher:
             # Near miss — log for manual review
             logger.warning(
                 "Near miss (%.1f%% < %d%% threshold): '%s' ~ '%s' [%s]. Manual review needed.",
-                score, FUZZY_MATCH_THRESHOLD, client_name, matched_alias, fund_id
+                score, settings.FUZZY_MATCH_THRESHOLD, client_name, matched_alias, fund_id
             )
             return None
 
@@ -118,7 +118,7 @@ class FundMatcher:
         matched_alias, score, _ = result
         fund_id = self._alias_to_fund[matched_alias]
 
-        if score >= FUZZY_MATCH_THRESHOLD:
+        if score >= settings.FUZZY_MATCH_THRESHOLD:
             return fund_id, score
         else:
             return None, score

@@ -15,17 +15,13 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from config.settings import (
+from app.core.config import (
+    settings,
     USER_AGENTS,
-    PROXY_POOL,
-    REQUEST_DELAY_MIN,
-    REQUEST_DELAY_MAX,
-    MAX_RETRIES,
-    BACKOFF_FACTOR,
     NSE_HOMEPAGE,
     BSE_HOMEPAGE,
 )
-from utils.logger import get_logger
+from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -37,15 +33,15 @@ def _random_ua() -> str:
 
 def _random_proxy() -> Optional[Dict[str, str]]:
     """Return a random proxy from the pool, or None if pool is empty."""
-    if not PROXY_POOL:
+    if not settings.PROXY_POOL:
         return None
-    proxy = random.choice(PROXY_POOL)
+    proxy = random.choice(settings.get_proxy_pool)
     return {"http": proxy, "https": proxy}
 
 
 def random_delay():
     """Sleep for a random duration between configured min and max."""
-    delay = random.uniform(REQUEST_DELAY_MIN, REQUEST_DELAY_MAX)
+    delay = random.uniform(settings.REQUEST_DELAY_MIN, settings.REQUEST_DELAY_MAX)
     time.sleep(delay)
 
 
@@ -57,8 +53,8 @@ def create_session(proxy: Optional[Dict[str, str]] = None) -> requests.Session:
 
     # Retry strategy with exponential backoff
     retry_strategy = Retry(
-        total=MAX_RETRIES,
-        backoff_factor=BACKOFF_FACTOR,
+        total=settings.MAX_RETRIES,
+        backoff_factor=settings.BACKOFF_FACTOR,
         status_forcelist=[429, 500, 502, 503, 504],
         allowed_methods=["GET", "HEAD"],
     )
@@ -78,7 +74,7 @@ def create_session(proxy: Optional[Dict[str, str]] = None) -> requests.Session:
     # Apply proxy
     if proxy:
         session.proxies.update(proxy)
-    elif PROXY_POOL:
+    elif settings.PROXY_POOL:
         session.proxies.update(_random_proxy())
 
     return session
@@ -136,7 +132,7 @@ class NSESession:
 
         kwargs.setdefault("timeout", 15)
 
-        for attempt in range(MAX_RETRIES):
+        for attempt in range(settings.MAX_RETRIES):
             try:
                 response = self.session.get(url, **kwargs)
 
@@ -145,7 +141,7 @@ class NSESession:
                         "NSE returned 403 on attempt %d. Re-initializing session...",
                         attempt + 1
                     )
-                    wait_time = BACKOFF_FACTOR ** attempt
+                    wait_time = settings.BACKOFF_FACTOR ** attempt
                     time.sleep(wait_time)
                     self.session = create_session()
                     self._initialized = False
@@ -153,7 +149,7 @@ class NSESession:
                     continue
 
                 if response.status_code == 429:
-                    wait_time = BACKOFF_FACTOR ** (attempt + 2)
+                    wait_time = settings.BACKOFF_FACTOR ** (attempt + 2)
                     logger.warning(
                         "NSE rate limit hit. Backing off for %ds...", wait_time
                     )
@@ -165,11 +161,11 @@ class NSESession:
 
             except requests.RequestException as e:
                 logger.error("NSE request error (attempt %d): %s", attempt + 1, e)
-                if attempt == MAX_RETRIES - 1:
+                if attempt == settings.MAX_RETRIES - 1:
                     raise
-                time.sleep(BACKOFF_FACTOR ** attempt)
+                time.sleep(settings.BACKOFF_FACTOR ** attempt)
 
-        raise requests.RequestException(f"Failed after {MAX_RETRIES} retries: {url}")
+        raise requests.RequestException(f"Failed after {settings.MAX_RETRIES} retries: {url}")
 
 
 class BSESession:
@@ -190,7 +186,7 @@ class BSESession:
         """Make a GET request to BSE API with proper headers."""
         kwargs.setdefault("timeout", 15)
 
-        for attempt in range(MAX_RETRIES):
+        for attempt in range(settings.MAX_RETRIES):
             try:
                 random_delay()
                 response = self.session.get(url, **kwargs)
@@ -199,11 +195,11 @@ class BSESession:
 
             except requests.RequestException as e:
                 logger.error("BSE request error (attempt %d): %s", attempt + 1, e)
-                if attempt == MAX_RETRIES - 1:
+                if attempt == settings.MAX_RETRIES - 1:
                     raise
-                wait_time = BACKOFF_FACTOR ** attempt
+                wait_time = settings.BACKOFF_FACTOR ** attempt
                 time.sleep(wait_time)
                 # Rotate UA on retry
                 self.session.headers["User-Agent"] = _random_ua()
 
-        raise requests.RequestException(f"Failed after {MAX_RETRIES} retries: {url}")
+        raise requests.RequestException(f"Failed after {settings.MAX_RETRIES} retries: {url}")

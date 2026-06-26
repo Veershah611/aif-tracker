@@ -1,26 +1,16 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Any
 import json
 import math
 
-from config.fund_registry import ALL_FUNDS, FUND_BY_ID
-from engine.portfolio_reconstructor import reconstruct_all_portfolios
-from database.connection import get_session
-from database.models import TradeLedger
+from app.core.fund_registry import ALL_FUNDS, FUND_BY_ID
+from app.engine.portfolio_reconstructor import reconstruct_all_portfolios
+from app.db.connection import get_session
+from app.db.models import TradeLedger
 
-app = FastAPI(title="AIF Scraper API", version="1.0.0")
+api_router = APIRouter()
 
-# Enable CORS for frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Adjust in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.get("/")
+@api_router.get("/")
 def health_check():
     """Root endpoint for health checks."""
     return {"status": "ok", "message": "AIF Scraper API is running"}
@@ -38,7 +28,7 @@ def clean_nan(obj: Any) -> Any:
         return [clean_nan(i) for i in obj]
     return obj
 
-@app.get("/api/funds")
+@api_router.get("/api/funds")
 def get_funds() -> List[Dict[str, Any]]:
     """Get the list of all registered funds."""
     return [
@@ -52,7 +42,7 @@ def get_funds() -> List[Dict[str, Any]]:
         for fund in ALL_FUNDS
     ]
 
-@app.get("/api/portfolio/{fund_id}")
+@api_router.get("/api/portfolio/{fund_id}")
 def get_portfolio(fund_id: str):
     """Get the reconstructed portfolio for a specific fund."""
     if fund_id not in FUND_BY_ID:
@@ -70,7 +60,7 @@ def get_portfolio(fund_id: str):
     records = df.to_dict(orient="records")
     return clean_nan(records)
 
-@app.get("/api/trades")
+@api_router.get("/api/trades")
 def get_recent_trades(limit: int = 50):
     """Get recent trades captured by the Delta Engine."""
     with get_session() as session:
@@ -94,7 +84,7 @@ def get_recent_trades(limit: int = 50):
 
 import pandas as pd
 
-@app.get("/api/stocks")
+@api_router.get("/api/stocks")
 def get_all_stocks():
     """Return all stock positions across all funds with fund names included."""
     portfolios = reconstruct_all_portfolios()

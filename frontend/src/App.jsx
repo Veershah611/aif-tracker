@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Briefcase, BarChart3, Database, Activity, LayoutDashboard, Layers, TrendingUp, Search, ArrowUpDown } from 'lucide-react';
+import { Briefcase, BarChart3, Database, Activity, LayoutDashboard, Layers, TrendingUp, Search, ArrowUpDown, IndianRupee, RefreshCw } from 'lucide-react';
 import './index.css';
 const rawApiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 let API_BASE = rawApiBase.replace(/\/+$/, '');
@@ -139,6 +139,29 @@ function App() {
     return new Intl.NumberFormat('en-IN').format(num);
   };
 
+  const formatPrice = (num) => {
+    if (num === null || num === undefined) return '-';
+    return '₹' + new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
+  };
+
+  const formatMarketCap = (num) => {
+    if (num === null || num === undefined) return '-';
+    if (num >= 1e12) return '₹' + (num / 1e12).toFixed(2) + ' T';
+    if (num >= 1e7) return '₹' + (num / 1e7).toFixed(2) + ' Cr';
+    if (num >= 1e5) return '₹' + (num / 1e5).toFixed(2) + ' L';
+    return '₹' + new Intl.NumberFormat('en-IN').format(num);
+  };
+
+  const handleTriggerScraper = async () => {
+    try {
+      alert("Triggering scraper in background... This may take a few minutes.");
+      const res = await axios.post(`${API_BASE}/trigger/delta-engine`);
+      alert(res.data.message || "Scraper triggered successfully!");
+    } catch (err) {
+      alert("Error: " + (err.response?.data?.detail || err.message));
+    }
+  };
+
   return (
     <div className="app-container">
       {/* Sidebar */}
@@ -189,6 +212,32 @@ function App() {
             ))}
           </div>
         )}
+        
+        <div style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          <button 
+            onClick={handleTriggerScraper}
+            style={{
+              width: '100%',
+              padding: '0.75rem',
+              background: 'rgba(129, 140, 248, 0.1)',
+              color: 'var(--primary)',
+              border: '1px solid var(--primary)',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              fontWeight: 500,
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => { e.currentTarget.style.background = 'var(--primary)'; e.currentTarget.style.color = 'white'; }}
+            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(129, 140, 248, 0.1)'; e.currentTarget.style.color = 'var(--primary)'; }}
+          >
+            <RefreshCw size={16} />
+            Run Scraper
+          </button>
+        </div>
       </aside>
 
       {/* Main Content */}
@@ -255,6 +304,8 @@ function App() {
                     <thead>
                       <tr>
                         <th onClick={() => handleSort('stock_name')} style={{ cursor: 'pointer' }}>Stock Name <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
+                        <th onClick={() => handleSort('current_price')} style={{ cursor: 'pointer' }}>CMP <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
+                        <th onClick={() => handleSort('market_cap')} style={{ cursor: 'pointer' }}>Market Cap <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
                         <th onClick={() => handleSort('baseline_qty')} style={{ cursor: 'pointer' }}>Baseline Qty <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
                         <th onClick={() => handleSort('total_buys')} style={{ cursor: 'pointer' }}>Buy Qty <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
                         <th onClick={() => handleSort('total_sells')} style={{ cursor: 'pointer' }}>Sell Qty <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
@@ -267,6 +318,8 @@ function App() {
                       {getSortedAndFilteredData(portfolio, ['stock_name']).map((row, idx) => (
                         <tr key={idx}>
                           <td style={{ fontWeight: 500 }}>{row.stock_name}</td>
+                          <td style={{ color: 'var(--accent)', fontWeight: 500 }}>{formatPrice(row.current_price)}</td>
+                          <td style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{formatMarketCap(row.market_cap)}</td>
                           <td style={{ color: 'var(--text-muted)' }}>{formatNumber(row.baseline_qty)}</td>
                           <td style={{ color: 'var(--secondary)' }}>{formatNumber(row.total_buys)}</td>
                           <td style={{ color: 'var(--danger)' }}>{formatNumber(row.total_sells)}</td>
@@ -396,6 +449,8 @@ function App() {
                       <tr>
                         <th onClick={() => handleSort('fund_name')} style={{ cursor: 'pointer' }}>Fund Name <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
                         <th onClick={() => handleSort('stock_name')} style={{ cursor: 'pointer' }}>Stock Name <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
+                        <th onClick={() => handleSort('current_price')} style={{ cursor: 'pointer' }}>CMP <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
+                        <th onClick={() => handleSort('market_cap')} style={{ cursor: 'pointer' }}>Market Cap <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
                         <th onClick={() => handleSort('baseline_qty')} style={{ cursor: 'pointer' }}>Baseline Qty <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
                         <th onClick={() => handleSort('total_buys')} style={{ cursor: 'pointer' }}>Buy Qty <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
                         <th onClick={() => handleSort('total_sells')} style={{ cursor: 'pointer' }}>Sell Qty <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
@@ -408,6 +463,8 @@ function App() {
                         <tr key={idx}>
                           <td style={{ fontWeight: 500, color: 'var(--text-muted)' }}>{row.fund_name}</td>
                           <td style={{ fontWeight: 500 }}>{row.stock_name}</td>
+                          <td style={{ color: 'var(--accent)', fontWeight: 500 }}>{formatPrice(row.current_price)}</td>
+                          <td style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{formatMarketCap(row.market_cap)}</td>
                           <td style={{ color: 'var(--text-muted)' }}>{formatNumber(row.baseline_qty)}</td>
                           <td style={{ color: 'var(--secondary)' }}>{formatNumber(row.total_buys)}</td>
                           <td style={{ color: 'var(--danger)' }}>{formatNumber(row.total_sells)}</td>

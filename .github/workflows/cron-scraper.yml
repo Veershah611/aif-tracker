@@ -1,0 +1,19 @@
+name: Scheduled Scraper
+
+on:
+  schedule:
+    # Runs at 13:30 UTC (which is 19:00 / 7:00 PM IST) Monday through Friday
+    - cron: '30 13 * * 1-5'
+  workflow_dispatch:
+    # Allows manual triggering from the GitHub Actions tab
+
+jobs:
+  run-scrapers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Delta Engine
+        run: |
+          curl -X POST ${{ secrets.RENDER_API_URL }}/api/trigger/delta-engine \
+               -H "cron-secret: ${{ secrets.CRON_SECRET }}"
+               
+      # Add more steps here if you want to trigger the weekly or quarterly scrapers on specific days
