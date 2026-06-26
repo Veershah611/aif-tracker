@@ -13,7 +13,6 @@ jobs:
     steps:
       - name: Trigger Delta Engine
         run: |
-          curl -X POST ${{ secrets.RENDER_API_URL }}/api/trigger/delta-engine \
-               -H "cron-secret: ${{ secrets.CRON_SECRET }}"
+          curl -X POST ${{ secrets.RENDER_API_URL }}/api/trigger/delta-engine
                
       # Add more steps here if you want to trigger the weekly or quarterly scrapers on specific days

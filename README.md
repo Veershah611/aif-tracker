@@ -34,7 +34,6 @@ aif_scrapper/
 │   ├── package.json             # ESLint, Prettier, Vite scripts
 │   └── .eslintrc.cjs
 ├── .github/workflows/           # CI/CD & Automated Cron Actions
-├── render.yaml                  # Render Deployment Blueprint
 └── README.md
 ```
 
@@ -119,9 +118,12 @@ From the `backend/` directory:
 This repository is optimized for a fully **Free-Tier Serverless Deployment**.
 
 ### 1. Render (Backend)
-The backend is deployed via Render. When you connect this repository in the Render dashboard via "Blueprint", it will automatically read `render.yaml` and provision a single Web Service.
-* Because the free tier spins down after 15 minutes of inactivity, we removed persistent background workers.
-* You must configure `CRON_SECRET` in the Render environment variables.
+The backend is deployed manually via Render Web Services.
+* In the Render dashboard, create a new "Web Service" from your GitHub repository.
+* Set the **Root Directory** to `backend`.
+* Set the **Build Command** to `pip install -r requirements.txt && playwright install chromium --with-deps`
+* Set the **Start Command** to `uvicorn main:app --host 0.0.0.0 --port $PORT`
+* Because the free tier spins down after 15 minutes of inactivity, we use external cron triggers instead of persistent background workers.
 
 ### 2. Vercel (Frontend)
 The frontend is deployed to Vercel. 
@@ -130,5 +132,5 @@ The frontend is deployed to Vercel.
 
 ### 3. GitHub Actions (Automation)
 Since there is no persistent background worker, the scraping tasks are automated using a GitHub Actions Scheduled Workflow (`.github/workflows/cron-scraper.yml`).
-* It automatically sends a secure HTTP POST request to the Render API every Monday-Friday at 7:00 PM IST to run the Delta Engine.
-* Ensure you add `RENDER_API_URL` and `CRON_SECRET` to your GitHub Repository Secrets.
+* It automatically sends an HTTP POST request to the Render API every Monday-Friday at 7:00 PM IST to run the Delta Engine.
+* Ensure you add `RENDER_API_URL` to your GitHub Repository Secrets.
