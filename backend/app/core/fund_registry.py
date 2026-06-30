@@ -166,6 +166,24 @@ BOI_SMALL_CAP = FundConfig(
     amc_url="https://www.boimf.in/docs/default-source/investorcorner/monthly-portfolio/",
 )
 
+QUANT_MF = FundConfig(
+    fund_id="quant_mf",
+    fund_name="Quant Mutual Fund",
+    regulatory_type="MF",
+    category="Multi Scheme",
+    aliases=[
+        "Quant Mutual Fund",
+        "quant mutual fund",
+        "QUANT MUTUAL FUND",
+        "Quant Mutual Fund -",
+        "QUANT MUTUAL FUND -",
+    ],
+    trendlyne_query="quant%20mutual%20fund",
+    trendlyne_deals_query="quant%20mutual%20fund",
+    amc_scheme_name="Quant Mutual Fund",
+    amc_url="https://quantmutual.com/statutory-disclosures",
+)
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Master Registry
@@ -181,6 +199,7 @@ ALL_FUNDS: List[FundConfig] = [
     BANDHAN_SMALL_CAP,
     BANDHAN_VALUE,
     BOI_SMALL_CAP,
+    QUANT_MF,
 ]
 
 # Quick lookup by fund_id

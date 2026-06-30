@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Briefcase, BarChart3, Database, Activity, LayoutDashboard, Layers, TrendingUp, Search, ArrowUpDown, IndianRupee, RefreshCw } from 'lucide-react';
+import { Briefcase, BarChart3, Database, Activity, LayoutDashboard, Layers, TrendingUp, Search, ArrowUpDown, IndianRupee, RefreshCw, Menu, X } from 'lucide-react';
 import './index.css';
 const rawApiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 let API_BASE = rawApiBase.replace(/\/+$/, '');
@@ -20,6 +20,12 @@ function App() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+
+  // Mobile sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => setSidebarOpen(prev => !prev);
+  const closeSidebar = () => setSidebarOpen(false);
 
   const handleSort = (key) => {
     let direction = 'asc';
@@ -129,6 +135,17 @@ function App() {
     }
   }, [activeTab]);
 
+  // Close sidebar when tab/fund changes on mobile
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    closeSidebar();
+  };
+
+  const handleFundSelect = (fund) => {
+    setSelectedFund(fund);
+    closeSidebar();
+  };
+
   // Summary Metrics
   const activeHoldings = portfolio.filter(p => p.status === 'HELD' || p.status === 'NEW').length;
   const totalBuys = portfolio.reduce((acc, curr) => acc + (curr.total_buys || 0), 0);
@@ -162,10 +179,28 @@ function App() {
     }
   };
 
+  // Sortable table header component
+  const SortTh = ({ sortKey, children }) => (
+    <th onClick={() => handleSort(sortKey)} style={{ cursor: 'pointer' }}>
+      {children} <ArrowUpDown size={14} style={{ display: 'inline', marginLeft: '4px', opacity: 0.5 }} />
+    </th>
+  );
+
   return (
     <div className="app-container">
+      {/* Mobile Hamburger */}
+      <button className="mobile-menu-btn" onClick={toggleSidebar} aria-label="Toggle menu">
+        {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
+      </button>
+
+      {/* Mobile Overlay */}
+      <div
+        className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`}
+        onClick={closeSidebar}
+      />
+
       {/* Sidebar */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="brand">
           <Activity size={28} color="#818cf8" />
           AIF Pulse
@@ -175,21 +210,21 @@ function App() {
           <div className="nav-title">Views</div>
           <button 
             className={`nav-item ${activeTab === 'portfolio' ? 'active' : ''}`}
-            onClick={() => setActiveTab('portfolio')}
+            onClick={() => handleTabChange('portfolio')}
           >
             <LayoutDashboard size={18} />
             Fund Dashboard
           </button>
           <button 
             className={`nav-item ${activeTab === 'trades' ? 'active' : ''}`}
-            onClick={() => setActiveTab('trades')}
+            onClick={() => handleTabChange('trades')}
           >
             <Layers size={18} />
             Trade Ledger
           </button>
           <button 
             className={`nav-item ${activeTab === 'stocks' ? 'active' : ''}`}
-            onClick={() => setActiveTab('stocks')}
+            onClick={() => handleTabChange('stocks')}
           >
             <BarChart3 size={18} />
             Market View
@@ -203,7 +238,7 @@ function App() {
               <button 
                 key={fund.fund_id}
                 className={`nav-item ${selectedFund?.fund_id === fund.fund_id ? 'active' : ''}`}
-                onClick={() => setSelectedFund(fund)}
+                onClick={() => handleFundSelect(fund)}
                 style={{ fontSize: '0.85rem' }}
               >
                 <Database size={16} />
@@ -213,27 +248,8 @@ function App() {
           </div>
         )}
         
-        <div style={{ padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-          <button 
-            onClick={handleTriggerScraper}
-            style={{
-              width: '100%',
-              padding: '0.75rem',
-              background: 'rgba(129, 140, 248, 0.1)',
-              color: 'var(--primary)',
-              border: '1px solid var(--primary)',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              fontWeight: 500,
-              transition: 'all 0.2s'
-            }}
-            onMouseOver={(e) => { e.currentTarget.style.background = 'var(--primary)'; e.currentTarget.style.color = 'white'; }}
-            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(129, 140, 248, 0.1)'; e.currentTarget.style.color = 'var(--primary)'; }}
-          >
+        <div className="sidebar-action">
+          <button className="scraper-btn" onClick={handleTriggerScraper}>
             <RefreshCw size={16} />
             Run Scraper
           </button>
@@ -255,16 +271,17 @@ function App() {
             <div className="topbar">
               <div>
                 <h1 className="page-title">{selectedFund.fund_name}</h1>
-                <p style={{ color: 'var(--text-muted)' }}>{selectedFund.regulatory_type} • Baseline Source: {selectedFund.amc_scheme_name || 'Trendlyne'}</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                  {selectedFund.regulatory_type} • Baseline Source: {selectedFund.amc_scheme_name || 'Trendlyne'}
+                </p>
               </div>
-              <div className="search-container" style={{ position: 'relative' }}>
-                <Search size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <div className="search-container">
+                <Search size={18} className="search-icon" />
                 <input 
                   type="text" 
                   placeholder="Search stocks..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{ padding: '0.5rem 1rem 0.5rem 2.2rem', borderRadius: '8px', border: '1px solid #333', background: '#1e1e1e', color: '#fff', width: '250px' }}
                 />
               </div>
             </div>
@@ -303,15 +320,15 @@ function App() {
                   <table>
                     <thead>
                       <tr>
-                        <th onClick={() => handleSort('stock_name')} style={{ cursor: 'pointer' }}>Stock Name <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
-                        <th onClick={() => handleSort('current_price')} style={{ cursor: 'pointer' }}>CMP <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
-                        <th onClick={() => handleSort('market_cap')} style={{ cursor: 'pointer' }}>Market Cap <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
-                        <th onClick={() => handleSort('baseline_qty')} style={{ cursor: 'pointer' }}>Baseline Qty <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
-                        <th onClick={() => handleSort('total_buys')} style={{ cursor: 'pointer' }}>Buy Qty <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
-                        <th onClick={() => handleSort('total_sells')} style={{ cursor: 'pointer' }}>Sell Qty <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
-                        <th onClick={() => handleSort('current_qty')} style={{ cursor: 'pointer' }}>Current Qty <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
-                        <th onClick={() => handleSort('net_delta')} style={{ cursor: 'pointer' }}>Net Delta <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
-                        <th onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>Status <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
+                        <SortTh sortKey="stock_name">Stock Name</SortTh>
+                        <SortTh sortKey="current_price">CMP</SortTh>
+                        <SortTh sortKey="market_cap">Market Cap</SortTh>
+                        <SortTh sortKey="baseline_qty">Baseline Qty</SortTh>
+                        <SortTh sortKey="total_buys">Buy Qty</SortTh>
+                        <SortTh sortKey="total_sells">Sell Qty</SortTh>
+                        <SortTh sortKey="current_qty">Current Qty</SortTh>
+                        <SortTh sortKey="net_delta">Net Delta</SortTh>
+                        <SortTh sortKey="status">Status</SortTh>
                       </tr>
                     </thead>
                     <tbody>
@@ -397,7 +414,7 @@ function App() {
                             </span>
                           </td>
                           <td>{formatNumber(trade.quantity)}</td>
-                          <td>₹{formatNumber(trade.execution_price)}</td>
+                          <td>{formatPrice(trade.execution_price)}</td>
                           <td style={{ color: 'var(--text-muted)' }}>{trade.exchange} ({trade.deal_type})</td>
                         </tr>
                       ))}
@@ -417,14 +434,13 @@ function App() {
                  <h1 className="page-title">Market View</h1>
                  <p style={{ color: 'var(--text-muted)' }}>Complete list of all stocks held by each tracked fund</p>
                </div>
-               <div className="search-container" style={{ position: 'relative' }}>
-                <Search size={18} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+               <div className="search-container">
+                <Search size={18} className="search-icon" />
                 <input 
                   type="text" 
                   placeholder="Search funds or stocks..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{ padding: '0.5rem 1rem 0.5rem 2.2rem', borderRadius: '8px', border: '1px solid #333', background: '#1e1e1e', color: '#fff', width: '250px' }}
                 />
                </div>
              </div>
@@ -447,15 +463,15 @@ function App() {
                   <table>
                     <thead>
                       <tr>
-                        <th onClick={() => handleSort('fund_name')} style={{ cursor: 'pointer' }}>Fund Name <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
-                        <th onClick={() => handleSort('stock_name')} style={{ cursor: 'pointer' }}>Stock Name <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
-                        <th onClick={() => handleSort('current_price')} style={{ cursor: 'pointer' }}>CMP <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
-                        <th onClick={() => handleSort('market_cap')} style={{ cursor: 'pointer' }}>Market Cap <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
-                        <th onClick={() => handleSort('baseline_qty')} style={{ cursor: 'pointer' }}>Baseline Qty <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
-                        <th onClick={() => handleSort('total_buys')} style={{ cursor: 'pointer' }}>Buy Qty <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
-                        <th onClick={() => handleSort('total_sells')} style={{ cursor: 'pointer' }}>Sell Qty <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
-                        <th onClick={() => handleSort('current_qty')} style={{ cursor: 'pointer' }}>Current Qty <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
-                        <th onClick={() => handleSort('net_delta')} style={{ cursor: 'pointer' }}>Net Delta <ArrowUpDown size={14} style={{display: 'inline', marginLeft: '4px'}}/></th>
+                        <SortTh sortKey="fund_name">Fund Name</SortTh>
+                        <SortTh sortKey="stock_name">Stock Name</SortTh>
+                        <SortTh sortKey="current_price">CMP</SortTh>
+                        <SortTh sortKey="market_cap">Market Cap</SortTh>
+                        <SortTh sortKey="baseline_qty">Baseline Qty</SortTh>
+                        <SortTh sortKey="total_buys">Buy Qty</SortTh>
+                        <SortTh sortKey="total_sells">Sell Qty</SortTh>
+                        <SortTh sortKey="current_qty">Current Qty</SortTh>
+                        <SortTh sortKey="net_delta">Net Delta</SortTh>
                       </tr>
                     </thead>
                     <tbody>

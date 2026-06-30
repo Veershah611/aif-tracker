@@ -63,12 +63,21 @@ def reconstruct_portfolio(fund_id: str) -> pd.DataFrame:
         result["net_delta"] = 0
         result["current_qty"] = result["quantity_held"]
         result["baseline_date"] = baseline_date
+        result["status"] = "HELD"
         result.rename(columns={"quantity_held": "baseline_qty"}, inplace=True)
-        return result[
+        result_df = result[
             ["stock_name", "isin", "baseline_qty", "total_buys",
-             "total_sells", "net_delta", "current_qty",
+             "total_sells", "net_delta", "current_qty", "status",
              "holding_percent", "holding_value", "baseline_date"]
-        ]
+        ].reset_index(drop=True)
+
+        # Enrich with live market data (current price + market cap)
+        try:
+            result_df = enrich_portfolio_with_market_data(result_df)
+        except Exception as e:
+            logger.warning("Market data enrichment failed (portfolio still valid): %s", e)
+
+        return result_df
 
     # Step 3: Aggregate trade deltas per stock
     # Use ISIN as primary key; fall back to stock_name if ISIN is missing
