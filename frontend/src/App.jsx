@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Briefcase, BarChart3, Database, Activity, LayoutDashboard, Layers, TrendingUp, Search, ArrowUpDown, IndianRupee, RefreshCw, Menu, X } from 'lucide-react';
+import { Briefcase, BarChart3, Database, Activity, LayoutDashboard, Layers, TrendingUp, Search, ArrowUpDown, RefreshCw, Menu, X } from 'lucide-react';
 import './index.css';
 const rawApiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 let API_BASE = rawApiBase.replace(/\/+$/, '');
@@ -112,7 +112,7 @@ function App() {
           setTrades(res.data);
           setLoading(false);
         })
-        .catch(err => {
+        .catch(() => {
           setError("Failed to fetch trade ledger.");
           setLoading(false);
         });
@@ -128,7 +128,7 @@ function App() {
           setStocks(res.data);
           setLoading(false);
         })
-        .catch(err => {
+        .catch(() => {
           setError("Failed to fetch market data.");
           setLoading(false);
         });
